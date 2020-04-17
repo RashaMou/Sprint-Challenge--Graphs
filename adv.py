@@ -97,8 +97,10 @@ def available_directions(room):
 def add_to_visited(room):
     visited.add(room.id)
     exits = room.get_exits()
+    visited_graph[room.id] = {}
     for exit in exits:
-        visited_graph.update({room.id: {exit: room.get_room_in_direction(exit).id}})
+        print(exit)
+        visited_graph[room.id][exit] = room.get_room_in_direction(exit).id
     return visited_graph
 
 
@@ -131,6 +133,8 @@ while stack.size() > 0:
             traversal_path.append(next_direction)
         # add to visited_graph and visited set
         add_to_visited(path[-1])
+        print("visited_graph", visited_graph)
+        print("visited", visited)
         # loop through all adjacent rooms.
         # if that room is not in visited, add it to the stack
         # if all of them ARE in visited, then call BFS to the nearest room with an unvisited adjacent room
@@ -142,7 +146,8 @@ while stack.size() > 0:
                 stack.push(new_path)
         else:
             #! how to find the room with the nearest open slot??
-            path_to_nearest_open_direction = bfs(player.current_room, open_room)
+            print("nope")
+            # path_to_nearest_open_direction = bfs(player.current_room, open_room)
 
 
 # TRAVERSAL TEST
