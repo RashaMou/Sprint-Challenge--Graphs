@@ -12,8 +12,8 @@ world = World()
 
 
 # You may uncomment the smaller graphs for development and testing purposes.
-# map_file = "maps/test_line.txt"
-map_file = "maps/test_cross.txt"
+map_file = "maps/test_line.txt"
+# map_file = "maps/test_cross.txt"
 # map_file = "maps/test_loop.txt"
 # map_file = "maps/test_loop_fork.txt"
 # map_file = "maps/main_maze.txt"
@@ -92,24 +92,24 @@ def available_directions(room):
         return "e"
     elif room.get_room_in_direction("w") is not None:
         return "w"
+    else:
+        return None
 
 
 def add_to_visited(room):
-    visited.add(room.id)
-    exits = room.get_exits()
-    visited_graph[room.id] = {}
-    for exit in exits:
-        print(exit)
-        visited_graph[room.id][exit] = room.get_room_in_direction(exit).id
+    visited_graph[room] = {"n": "?", "s": "?", "w": "?", "e": "?"}
     return visited_graph
 
 
-def get_adjacent_unvisited_rooms(room):
+def update_visited(room, direction):
+    visited_graph[room.id][direction] = room.get_room_in_direction(direction).id
+
+
+def get_adjacent_rooms(room):
     adjacent_rooms = []
     exits = room.get_exits()  # array
     for exit in exits:
-        if room.get_room_in_direction(exit).id not in visited:
-            adjacent_rooms.append(room.get_room_in_direction(exit))
+        adjacent_rooms.append(room.get_room_in_direction(exit))
     return adjacent_rooms
 
 
@@ -118,38 +118,35 @@ def get_adjacent_unvisited_rooms(room):
 # initialize the traversal:
 stack = Stack()
 stack.push([player.current_room])
-visited = set()
 
 # loop through the stack
 while stack.size() > 0:
     path = stack.pop()  # gives us the last room in the stack
-    player.current_room.id
     next_direction = available_directions(player.current_room)
-    # next_direction = get_next_room(player.current_room, path[-1])
     # if last room in stack is not in visited, check what directions we have available:
-    if path[-1].id not in visited:
-        if next_direction != None:
-            player.travel(next_direction)
-            traversal_path.append(next_direction)
-        # add to visited_graph and visited set
-        add_to_visited(path[-1])
-        print("visited_graph", visited_graph)
-        print("visited", visited)
-        # loop through all adjacent rooms.
-        # if that room is not in visited, add it to the stack
-        # if all of them ARE in visited, then call BFS to the nearest room with an unvisited adjacent room
-        adjacent_rooms = get_adjacent_unvisited_rooms(player.current_room)
+    current_room = path[-1]
+    if current_room.id not in visited_graph:
+        # adds to visited with all directions set to ?
+        add_to_visited(current_room.id)
+        # put all adjacent rooms in the stack
+        adjacent_rooms = get_adjacent_rooms(current_room)
         if len(adjacent_rooms) > 0:
             for room in adjacent_rooms:
                 new_path = list(path)
                 new_path.append(room)
                 stack.push(new_path)
-        else:
-            #! how to find the room with the nearest open slot??
-            print("nope")
-            # path_to_nearest_open_direction = bfs(player.current_room, open_room)
+        # travel, append to traversal path, update visited graph with new direction
+        player.travel(next_direction)
+        traversal_path.append(next_direction)
+        update_visited(current_room, next_direction)
 
+        # else:
+        #     #! how to find the room with the nearest open slot??
+        #     print("nope")
+        #     # path_to_nearest_open_direction = bfs(player.current_room, open_room)
+    # if it IS in the visited graph, then we need to check to see what
 
+print("traversal_path", traversal_path)
 # TRAVERSAL TEST
 visited_rooms = set()
 player.current_room = world.starting_room
