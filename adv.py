@@ -89,8 +89,6 @@ def bfs(current_room):
                                 return key
                     else:
                         player.travel(opposites[temp_traversal_path[-1]])
-                        update_visited(player.current_room,
-                                       opposites[temp_traversal_path[-1]])
                         traversal_path.append(
                             opposites[temp_traversal_path[-1]])
                 # this is where we want to get to
