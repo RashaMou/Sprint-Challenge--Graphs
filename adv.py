@@ -13,8 +13,8 @@ world = World()
 
 # You may uncomment the smaller graphs for development and testing purposes.
 # map_file = "maps/test_line.txt"
-map_file = "maps/test_cross.txt"
-# map_file = "maps/test_loop.txt"
+# map_file = "maps/test_cross.txt"
+map_file = "maps/test_loop.txt"
 # map_file = "maps/test_loop_fork.txt"
 # map_file = "maps/main_maze.txt"
 
@@ -55,30 +55,56 @@ player = Player(world.starting_room)
 
 traversal_path = []
 visited = {}
+opposites = {"n": "s", "s": "n", "e": "w", "w": "e"}
 
 
-def bfs(current_room, target_room):
+def bfs(current_room):
     # if there are no more unvisited adjacent rooms, we do a BFS
-    qq = Queue()
-    qq.enqueue([current_room])
+    queue = Queue()
+    queue.enqueue([current_room])
     # create a set of traversed vertices
-    visited = set()
+    visited_bfs = set()
+    temp_traversal_path = traversal_path.copy()
     # while queue is not empty:
-    while qq.size() > 0:
+    while queue.size() > 0:
         # dequeue/pop first vertex
-        qq_path = qq.dequeue()
+        queue_path = queue.dequeue()
         # if not visited
-        if qq_path[-1] not in visited:
-            # DO THE THING!!!!!!!
-            if qq_path[-1] == target_room:
-                return qq_path
-            # mark as visited
-            visited.add(qq_path[-1])
-            # enqueue all neighbors
-            for option in qq_path[-1].get_exits():
-                new_qq_path = list(qq_path)
-                new_qq_path.append(qq_path[-1].get_room_in_direction(option))
-                qq.enqueue(new_qq_path)
+        if queue_path[-1] not in visited_bfs:
+            # mark as visited_bfs
+            visited_bfs.add(queue_path[-1])
+            # check if room has unexplored exit
+            if available_directions(queue_path[-1]) is None:
+                # enqueue all neighbors
+                for option in queue_path[-1].get_exits():
+                    new_queue_path = list(queue_path)
+                    new_queue_path.append(
+                        queue_path[-1].get_room_in_direction(option))
+                    queue.enqueue(new_queue_path)
+                    # we're not necessarily traveling to the opposite. Once we're at 5, we can either backtrack, or go
+                    # forward. how do we know when to do each??
+                    if "?" in visited[player.current_room.id].values():
+                        for key, val in visited[player.current_room.id].items():
+                            if val == "?":
+                                return key
+                    else:
+                        player.travel(opposites[temp_traversal_path[-1]])
+                        update_visited(player.current_room,
+                                       opposites[temp_traversal_path[-1]])
+                        traversal_path.append(
+                            opposites[temp_traversal_path[-1]])
+                # this is where we want to get to
+                print('curr room', player.current_room.id)
+                if "?" in visited[player.current_room.id].values():
+                    for key, val in visited[player.current_room.id].items():
+                        if val == "?":
+                            return key
+                temp_traversal_path.pop()
+                # print('temp traversal path after pop', temp_traversal_path)
+                # print('traversal path before append', traversal_path)
+            else:
+                print('available dirs', available_directions(queue_path[-1]))
+                return available_directions(queue_path[-1])
 
 
 def available_directions(room):
@@ -98,30 +124,33 @@ def add_to_visited(room):
     exits = room.get_exits()
     visited[room.id] = {}
     for exit in exits:
-        visited[room.id].update({exit: "?"})
+        if room.get_room_in_direction(exit).id not in visited:
+            visited[room.id].update({exit: "?"})
+        else:
+            if len(traversal_path) > 0:
+                opposite_direction = opposites[traversal_path[-1]]
+                visited[room.id][opposite_direction] = room.get_room_in_direction(
+                    opposite_direction)
+                visited[room.id].update(
+                    {exit: room.get_room_in_direction(exit)})
     return visited
 
 # after player travels, we update the value of the direction traveled in visited[current_room] dictionary
 
 
 def update_visited(room, direction):
-    visited[room.id][direction] = room.get_room_in_direction(
-        direction)
+    if visited[room.id].get(direction) is not None:
+        visited[room.id][direction] = room.get_room_in_direction(
+            direction)
 
 # after we add a room to visited dictionary, we update the value of the opposite direction traveled in visited[current_room] dictionary
 # e.g if we just went north from room 1 to room 2, after we add room 2 to visited we update visited[room_2][s] = room_1
 
 
-def update_opposite_room_in_visited(room):
-    opposites = {"n": "s", "s": "n", "e": "w", "w": "e"}
-    opposite_direction = opposites[traversal_path[-1]]
-    visited[room.id][opposite_direction] = room.get_room_in_direction(
-        opposite_direction)
-
-
 def get_adjacent_rooms(room):
     adjacent_rooms = []
     exits = room.get_exits()  # array
+    print('exits for room', room.id, ':', exits, '\n')
     for exit in exits:
         adjacent_rooms.append(room.get_room_in_direction(exit))
     return adjacent_rooms
@@ -134,42 +163,42 @@ def get_adjacent_rooms(room):
 stack = Stack()
 stack.push([player.current_room])
 
+# while len(visited.keys()) < len(room_graph.keys()):
 # loop through the stack
 while stack.size() > 0:
     path = stack.pop()  # gives us the last room in the stack
-    print('path', path)
     # get next direction for current room
-    next_direction = available_directions(player.current_room)
-    # if next direction is None, then run DFT
-    # we need to update the directions of the rooms we already traversed.
     current_room = player.current_room
-    print('current_room', current_room.id)
+    next_direction = available_directions(current_room)
+    print('current_room:', current_room.id,
+          'next_direction:', next_direction)
     if current_room.id not in visited:
         # adds to visited with all directions set to ?
         add_to_visited(current_room)
-        if current_room.id != 0:
-            update_opposite_room_in_visited(current_room)
-        print('visited', visited)
+    if next_direction is None:
+        if len(visited.keys()) < len(room_graph.keys()):
+            next_direction = bfs(current_room)
+            print('current room after bf', player.current_room.id)
+            print('next direction after bf', next_direction)
+        else:
+            break
+    print('visited', visited)
 
-        # put all adjacent rooms in the stack
-        adjacent_rooms = get_adjacent_rooms(current_room)
-        if len(adjacent_rooms) > 0:
-            for room in adjacent_rooms:
-                if room.id not in visited:
-                    new_path = list(path)
-                    new_path.append(room)
-                    stack.push(new_path)
-        # travel, append to traversal path, update visited graph with new direction
-        print('next direction before travel', next_direction)
-        player.travel(next_direction)
-        traversal_path.append(next_direction)
-        update_visited(current_room, next_direction)
+    # put all adjacent rooms in the stack
+    adjacent_rooms = get_adjacent_rooms(player.current_room)
+    if len(adjacent_rooms) > 0:
+        for room in adjacent_rooms:
+            if room.id not in visited:
+                new_path = list(path)
+                new_path.append(room)
+                stack.push(new_path)
+    # travel, append to traversal path, update visited graph with new direction
+    update_visited(player.current_room, next_direction)
+    player.travel(next_direction)
+    traversal_path.append(next_direction)
+    print('traversal path:', traversal_path)
+    print('visited length', len(visited.keys()))
 
-# else:
-#     #! how to find the room with the nearest open slot??
-#     print("nope")
-#     # path_to_nearest_open_direction = bfs(player.current_room, open_room)
-# if it IS in the visited graph, then we need to check to see what
 
 print("traversal_path", traversal_path)
 # TRAVERSAL TEST
