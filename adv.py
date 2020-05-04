@@ -14,8 +14,8 @@ world = World()
 # You may uncomment the smaller graphs for development and testing purposes.
 # map_file = "maps/test_line.txt"
 # map_file = "maps/test_cross.txt"
-map_file = "maps/test_loop.txt"
-# map_file = "maps/test_loop_fork.txt"
+# map_file = "maps/test_loop.txt"
+map_file = "maps/test_loop_fork.txt"
 # map_file = "maps/main_maze.txt"
 
 # Loads the map into a dictionary
@@ -74,35 +74,23 @@ def bfs(current_room):
             # mark as visited_bfs
             visited_bfs.add(queue_path[-1])
             # check if room has unexplored exit
-            if available_directions(queue_path[-1]) is None:
+            if "?" in visited[player.current_room.id].values():
+                for key, val in visited[player.current_room.id].items():
+                    if val == "?":
+                        return key
+            else:
                 # enqueue all neighbors
                 for option in queue_path[-1].get_exits():
                     new_queue_path = list(queue_path)
                     new_queue_path.append(
                         queue_path[-1].get_room_in_direction(option))
                     queue.enqueue(new_queue_path)
-                    # we're not necessarily traveling to the opposite. Once we're at 5, we can either backtrack, or go
-                    # forward. how do we know when to do each??
-                    if "?" in visited[player.current_room.id].values():
-                        for key, val in visited[player.current_room.id].items():
-                            if val == "?":
-                                return key
-                    else:
-                        player.travel(opposites[temp_traversal_path[-1]])
-                        traversal_path.append(
-                            opposites[temp_traversal_path[-1]])
-                # this is where we want to get to
-                print('curr room', player.current_room.id)
-                if "?" in visited[player.current_room.id].values():
-                    for key, val in visited[player.current_room.id].items():
-                        if val == "?":
-                            return key
-                temp_traversal_path.pop()
-                # print('temp traversal path after pop', temp_traversal_path)
-                # print('traversal path before append', traversal_path)
-            else:
-                print('available dirs', available_directions(queue_path[-1]))
-                return available_directions(queue_path[-1])
+                print("travel dir from opp",
+                      opposites[temp_traversal_path[-1]])
+                player.travel(opposites[temp_traversal_path[-1]])
+                traversal_path.append(
+                    opposites[temp_traversal_path[-1]])
+            temp_traversal_path.pop()
 
 
 def available_directions(room):
