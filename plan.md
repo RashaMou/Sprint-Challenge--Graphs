@@ -65,6 +65,12 @@ What needs to get done:
   - If not, then iterate through each exit in the current room & store the exits that are unexplored('?' inside an empty list (room_exits))
 
   - If the len of our unexplored exits (room_exits) for curr room is 0:
-    -use our BFS to return the next path of rooms from our QUEUE that have unexplored exits - Loop through the room_ids from our returned path coming from BFS - for all the exits in our current room, verify the room ids in the path exist for current room - if so append that exit direction to our traversal_path - Add in the new room id, using get_room_in_direction - Add in the new room id as a key, if its not yet logged in visited dict - Add in the current room, as the room value for the opposite direction - Travel to the exit direction using player.travel
+    -use our BFS to return the next path of rooms from our QUEUE that have unexplored exits
+
+    - Loop through the room_ids from our returned path coming from BFS
+    - for all the exits in our current room, verify the room ids in the path exist for current room - if so append that exit direction to our traversal_path -
+
+    - Add in the new room id, using get_room_in_direction - Add in the new room id as a key, if its not yet logged in visited dict - Add in the current room, as the room value for the opposite direction - Travel to the exit direction using player.travel
+
   - Else if the length of our unexplored exits (room_exits) is > 0 (we have unexplored exits for current room)
     - Execute travel & log room entries function on the given direction & room
